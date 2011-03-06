@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Project DefaultTargets="Debug" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project=".\Support\AWS MSBuild Tools\Snowcode.S3BuildPublisher.Tasks.Targets" />
+
+
+
+
+
+
+
+  <!-- *********************************************************************************** -->
+  <!-- AWS Helpers                                                                         -->
+  <!-- *********************************************************************************** -->
+
+  <!-- Sample target to store AWS credentials -->
+  <!-- You should run this first time you run any of these targets to ensure your keys are stored -->
+  <Target Name="StoreKeys">
+    <StoreClientDetailsTask
+      EncryptionContainerName ="BuildMachineNet"
+      AwsAccessKeyId="***********************************************"
+      AwsSecretAccesskey="***********************************************" />
+  </Target>
+
+  <!-- Create the Test queue used by the sample ccnet SqsTrigger -->
+  <Target Name="CreateTestQueue">
+    <CreateSQSQueueTask 
+	QueueName="TriggerBuildMachineTest"
+	EncryptionContainerName ="BuildMachineNet" >
+	      <Output TaskParameter="QueueUrl" PropertyName="QueueUrl" />
+    </CreateSQSQueueTask>
+
+    <Message Text="Created Queue at : $(QueueUrl)" />
+  </Target>
+
+  <!-- Delete a SQS Queue -->
+  <Target Name="DeleteTestQueue">
+    <!-- Create a Queue to delete -->
+    <CreateSQSQueueTask
+      QueueName="TriggerBuildMachineTest"
+      EncryptionContainerName ="BuildMachineNet" >
+      <Output TaskParameter="QueueUrl" PropertyName="QueueUrl" />
+    </CreateSQSQueueTask>
+    
+    <DeleteSQSQueueTask
+      QueueUrl="$(QueueUrl)"
+      EncryptionContainerName ="MySecretContainer" />
+  </Target>
+
+  <!-- Send a message to a SQS Queue -->
+  <Target Name="SendSQSMessage" >
+    <!-- Create a Queue to send a message to -->
+    <CreateSQSQueueTask
+      QueueName="TriggerBuildMachineTest"
+      EncryptionContainerName ="BuildMachineNet" >
+      <Output TaskParameter="QueueUrl" PropertyName="QueueUrl" />
+    </CreateSQSQueueTask>
+
+    <SendSQSMessageTask
+      QueueUrl="$(QueueUrl)"
+      MessageBody="Test Message to SQS Queue"
+      EncryptionContainerName ="BuildMachineNet" >
+      <Output TaskParameter="MessageId" PropertyName="MessageId" />
+    </SendSQSMessageTask>
+
+    <Message Text="Sent message Id : $(MessageId)" />
+  </Target>
+
+</Project>
