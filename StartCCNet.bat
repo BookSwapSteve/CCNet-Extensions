@@ -1,0 +1,1 @@
+"C:\Program Files (x86)\CruiseControl.NET\server\ccnet.exe" --config=.\Sample.CCNET.config
