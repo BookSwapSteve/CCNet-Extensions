@@ -1,1 +1,72 @@
-CCnet Extensions for integration with BuildMachine.Net
+CCNet Extensions
+----------------
+
+These extensions use Amazons AWS services and BuildMachine.Net services. The project is used to improve integration of CCNet with BuildMachine.Net. Please see http://www.BuildMachine.Net for more information.
+
+Built against CCNet 1.6
+
+Assembly file:
+-------------
+ccnet.buildmachine.net.plugin.dll
+
+Copy into ccnet or plugin folder under ccnet to use.
+
+See Sample.CCNET.config for sample usages
+
+Debugging:
+---------
+Update your ccnet.exe.config to point the plugin location to the build output (or have the build copy the dll to the ccnet plugin folder)
+
+<add key="PluginLocation" value="S:\...\AnalysisUK.BuildMachine.CCNetExtensions\bin\Debug"/>
+
+Contents:
+--------
+
+WebServiceLabeller - Gets the label from a BuildMachine.Net webservice.
+SimpleDBLabeller - Gets the label from a SimpleDB Database
+
+S3BuildPublisher - Publishes builds to S3
+
+SnsPublisher - Creates a build notification
+
+SimpleDBState - Stores CCNet state in a SimpleDB database
+WebServiceState - Stores CCNet state using a BuildMachine.Net webserivce
+
+SqsTrigger - Triggers a build when a message is places on a AWS SQS queue.
+
+----------------------------------------------------------------------------------
+
+SqsTrigger:
+----------
+Requires Amazon AWS Access Key, Secret key and SQS queue Url to be set in the ccnet.config (see Sample.CCNET.config) file.
+
+To Create a SQS queue use the build.proj file (See "Using Build.proj file with AWS" notes below).
+
+The create the Queue:
+MSBuild build.proj /t:CreateTestQueue
+
+To test the queue trigger use:
+MSBuild build.proj /t:SendSQSMessage
+
+Sample usage:
+
+<project>
+  <name>Sample SQS Triggered Project</name>
+
+  <triggers>
+    <sqsTrigger>
+      <awsAccessKey>** Your Access Key here **</awsAccessKey>
+      <awsSecretAccessKey>** Your Secret Access Key here</awsSecretAccessKey>
+      <queueUrl>** Your aws SQS Queue Url here **</queueUrl>
+    </sqsTrigger>
+  </triggers>
+</project>
+
+
+Using Build.proj file with AWS:
+------------------------------
+When first using the build.proj file for use with AWS you need to store your AWS keys using the StoreKeys target, setting the AwsAccessKeyId and AwsSecretAccessKey, this stores the keys in a encrypted container on the machine. 
+The keys can then be removed from the build.proj file so you don't accidentally check them into source control.
+
+To store keys:
+MSBuild build.proj /t:StoreKeys
