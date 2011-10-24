@@ -19,6 +19,10 @@ Update your ccnet.exe.config to point the plugin location to the build output (o
 
 <add key="PluginLocation" value="S:\...\AnalysisUK.BuildMachine.CCNetExtensions\bin\Debug"/>
 
+Start ccnet from command line using the StartCCNET.bat file in the solution folder, this uses the Sample.CCNET.config file.
+
+Attach to the CCNET process.
+
 Contents:
 --------
 
