@@ -27,6 +27,7 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.State
     {
         private readonly IAwsFactoryWrapper _awsFactoryWrapper;
         private readonly IStateManager _fallbackStateManager;
+        private bool _bucketCreated = false;
 
         public S3StateManager()
             : this(new AwsFactory(), new FileStateManager())
@@ -36,8 +37,10 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.State
         {
             if (awsFactoryWrapper == null) throw new ArgumentNullException("awsFactoryWrapper");
             if (fallbackStateManager == null) throw new ArgumentNullException("fallbackStateManager");
+
             _awsFactoryWrapper = awsFactoryWrapper;
             _fallbackStateManager = fallbackStateManager;
+            BucketRegion = S3Region.US;
         }
 
         public IIntegrationResult LoadState(string project)
@@ -109,16 +112,23 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.State
         public string AwsSecretAccessKey { get; set; }
 
         /// <summary>
-        /// AWS SimpleDB Domain name to use 
+        /// AWS S3 Bucket name. Will be created if it does not exist.
         /// </summary>
         [ReflectorProperty("bucket", Required = true)]
         public string Bucket { get; set; }
 
         /// <summary>
+        /// The region to create the bucket in.
+        /// </summary>
+        /// <remarks>Values are ASP1, EU, SFO, US</remarks>
+        [ReflectorProperty("bucketRegion ", Required = false)]
+        public S3Region BucketRegion { get; set; }
+
+        /// <summary>
         /// Allow the state manager to fall back to local file state when reading 
         /// state if it is not stored on S3.
         /// </summary>
-        [ReflectorProperty("fallbackToFileState", Required = true)]
+        [ReflectorProperty("fallbackToFileState", Required = false)]
         public bool FallbackToFileState { get; set; }
 
         #endregion
@@ -135,6 +145,7 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.State
                                   Key = result.ProjectName + ".xml",
                               };
 
+            CreateBucket();
             CreateAmazonS3Client().PutObject(request);
         }
 
@@ -184,8 +195,9 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.State
         {
             try
             {
-                var request = new ListObjectsRequest {Prefix = projectName + ".xml", BucketName = Bucket};
+                var request = new ListObjectsRequest { Prefix = projectName + ".xml", BucketName = Bucket };
 
+                CreateBucket();
                 ListObjectsResponse response = CreateAmazonS3Client().ListObjects(request);
 
                 return response.S3Objects.Count > 0;
@@ -196,6 +208,27 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.State
                 throw new CruiseControlException("Error loading state from S3", ex);
             }
             throw new CruiseControlException("Failed to load state from S3");
+        }
+
+        /// <summary>
+        /// Creates the bucket. If the bucket already exists no action is taken.
+        /// </summary>
+        private void CreateBucket()
+        {
+            if (_bucketCreated)
+            {
+                return;
+            }
+
+            try
+            {
+                var request = new PutBucketRequest { BucketName = Bucket, BucketRegion = BucketRegion };
+                CreateAmazonS3Client().PutBucket(request);
+            }
+            catch (Exception ex)
+            {
+                throw new CruiseControlException("Failed to create bucket " + Bucket, ex);
+            }
         }
 
         private AmazonS3 CreateAmazonS3Client()
