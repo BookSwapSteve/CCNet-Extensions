@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Xml.Serialization;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -23,7 +19,7 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.State
     /// 
     /// This should be useful when using EC2 machines.</remarks>
     [ReflectorType("s3State")]
-    public class S3StateManager : IStateManager
+    public class S3StateManager : IStateManager, IAwsTask
     {
         private readonly IAwsFactoryWrapper _awsFactoryWrapper;
         private readonly IStateManager _fallbackStateManager;
@@ -42,6 +38,8 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.State
             _fallbackStateManager = fallbackStateManager;
             BucketRegion = S3Region.US;
         }
+
+        #region IStateManager Interface
 
         public IIntegrationResult LoadState(string project)
         {
@@ -96,6 +94,8 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.State
             return false;
         }
 
+        #endregion
+
         #region Public Properties
 
         /// <summary>
@@ -128,8 +128,19 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.State
         /// Allow the state manager to fall back to local file state when reading 
         /// state if it is not stored on S3.
         /// </summary>
+        /// <default>false</default>
         [ReflectorProperty("fallbackToFileState", Required = false)]
         public bool FallbackToFileState { get; set; }
+
+        /// <summary>
+        /// Try to create the bucket on execute.
+        /// </summary>
+        /// <version>1.5</version>
+        /// <default>false</default>
+        /// <remarks>Set to false if the bucket already exists otherwise if many projects try to create the bucket aws 
+        /// may will throw a resource being modified exception causing problems on CCNET start.</remarks>
+        [ReflectorProperty("createBucket", Required = false)]
+        public bool CreateBucket { get; set; }
 
         #endregion
 
@@ -145,7 +156,8 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.State
                                   Key = result.ProjectName + ".xml",
                               };
 
-            CreateBucket();
+            TryCreateBucket();
+
             CreateAmazonS3Client().PutObject(request);
         }
 
@@ -197,7 +209,7 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.State
             {
                 var request = new ListObjectsRequest { Prefix = projectName + ".xml", BucketName = Bucket };
 
-                CreateBucket();
+                TryCreateBucket();
                 ListObjectsResponse response = CreateAmazonS3Client().ListObjects(request);
 
                 return response.S3Objects.Count > 0;
@@ -213,8 +225,13 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.State
         /// <summary>
         /// Creates the bucket. If the bucket already exists no action is taken.
         /// </summary>
-        private void CreateBucket()
+        private void TryCreateBucket()
         {
+            if (!CreateBucket)
+            {
+                return;
+            }
+
             if (_bucketCreated)
             {
                 return;

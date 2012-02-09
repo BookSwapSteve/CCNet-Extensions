@@ -55,6 +55,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IAwsTask.cs" />
     <Compile Include="State\S3StateManager.cs" />
     <Compile Include="Util\AWS\AwsFactory.cs" />
     <Compile Include="Util\AWS\IAwsFactoryWrapper.cs" />
