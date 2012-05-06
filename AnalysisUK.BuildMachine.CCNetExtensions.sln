@@ -1,20 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnalysisUK.BuildMachine.CCNetExtensions", "AnalysisUK.BuildMachine.CCNetExtensions.csproj", "{65D0A674-D70B-47B3-92BD-C31C33B2F71F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnalysisUK.BuildMachine.CCNetExtensions", "AnalysisUK.BuildMachine.CCNetExtensions\AnalysisUK.BuildMachine.CCNetExtensions.csproj", "{65D0A674-D70B-47B3-92BD-C31C33B2F71F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnalysisUK.BuildMachine.CCNetExtensions.Tests", "..\AnalysisUK.BuildMachine.CCNetExtensions.Tests\AnalysisUK.BuildMachine.CCNetExtensions.Tests.csproj", "{079F0BC9-CCFF-4BD5-BA51-05398A5468B6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnalysisUK.BuildMachine.CCNetExtensions.Tests", "AnalysisUK.BuildMachine.CCNetExtensions.Tests\AnalysisUK.BuildMachine.CCNetExtensions.Tests.csproj", "{079F0BC9-CCFF-4BD5-BA51-05398A5468B6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{39A6D190-6190-4A2E-A076-98DCECE1113B}"
 	ProjectSection(SolutionItems) = preProject
-		..\build.proj = ..\build.proj
-		..\README = ..\README
-		..\Sample.CCNET.config = ..\Sample.CCNET.config
+		build.proj = build.proj
+		README = README
+		Sample.CCNET.config = Sample.CCNET.config
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{00B32391-8B41-476D-B01D-82F040178435}"
 	ProjectSection(SolutionItems) = preProject
-		.nuget\packages.config = .nuget\packages.config
+		AnalysisUK.BuildMachine.CCNetExtensions\.nuget\packages.config = AnalysisUK.BuildMachine.CCNetExtensions\.nuget\packages.config
 	EndProjectSection
 EndProject
 Global
