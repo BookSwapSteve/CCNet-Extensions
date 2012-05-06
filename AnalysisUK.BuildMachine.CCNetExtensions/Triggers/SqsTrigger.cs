@@ -9,6 +9,7 @@ using ThoughtWorks.CruiseControl.Core.Config;
 using ThoughtWorks.CruiseControl.Core.Triggers;
 using ThoughtWorks.CruiseControl.Core.Util;
 using ThoughtWorks.CruiseControl.Remote;
+using Message = Amazon.SQS.Model.Message;
 
 namespace AnalysisUK.BuildMachine.CCNetExtensions.Triggers
 {
@@ -26,7 +27,7 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.Triggers
         private AmazonSQS _client;
         private string _name;
         private double _intervalSeconds = DefaultTriggerIntervalSeconds;
-        private List<Amazon.SQS.Model.Message> _messages;
+        private List<Message> _messages;
 
         #endregion
 
@@ -253,7 +254,7 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.Triggers
         /// Get the messages from the SQS Queue
         /// </summary>
         /// <returns></returns>
-        private List<Amazon.SQS.Model.Message> GetMessagesFromQueue()
+        private List<Message> GetMessagesFromQueue()
         {
             try
             {
@@ -280,14 +281,41 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.Triggers
         /// <remarks>Queue message is only used to kick off a build so their is no significance to each message</remarks>
         private void RemoveMessagesFromQueue()
         {
+            Log.Info("Trying to remove {0} messages from SQS Queue {1}", _messages.Count, QueueUrl);
+
+            if (_messages.Count == 0)
+            {
+                Log.Error("Trying to remove messages from SQS Queue {0} but no messages listed as need removing.", QueueUrl);
+            }
+
+            RemoveMessages();
+        }
+
+        private void RemoveMessages()
+        {
             ConstructClientIfNeeded();
 
             foreach (var message in _messages)
             {
+                RemoveMessage(message);
+            }
+
+            _messages.Clear();
+        }
+
+        private void RemoveMessage(Message message)
+        {
+            try
+            {
                 Log.Info("Deleting SQS message {0} on queue: {1}", message.MessageId, QueueUrl);
-                var request = new DeleteMessageRequest { QueueUrl = QueueUrl, ReceiptHandle = message.ReceiptHandle };
+                var request = new DeleteMessageRequest {QueueUrl = QueueUrl, ReceiptHandle = message.ReceiptHandle};
 
                 _client.DeleteMessage(request);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error removing message:{0}", message.ReceiptHandle);
+                Log.Error(ex);
             }
         }
 
