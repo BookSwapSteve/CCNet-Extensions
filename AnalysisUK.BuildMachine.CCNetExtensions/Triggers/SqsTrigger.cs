@@ -27,7 +27,7 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.Triggers
         private AmazonSQS _client;
         private string _name;
         private double _intervalSeconds = DefaultTriggerIntervalSeconds;
-        private List<Message> _messages;
+        private readonly List<Message> _messages = new List<Message>();
 
         #endregion
 
@@ -228,11 +228,13 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.Triggers
         {
             ConstructClientIfNeeded();
 
-            _messages = GetMessagesFromQueue();
+            var queuedMessages = GetMessagesFromQueue();
 
-            if (_messages != null && _messages.Count > 0)
+            if (queuedMessages.Count > 0)
             {
-                Log.Info("Found {0} SQS messages on queue {1}", _messages.Count, QueueUrl);
+                Log.Info("Found {0} SQS messages on queue {1}", queuedMessages.Count, QueueUrl);
+
+                _messages.AddRange(queuedMessages);
 
                 return BuildCondition;
             }
@@ -288,13 +290,13 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.Triggers
                 Log.Error("Trying to remove messages from SQS Queue {0} but no messages listed as need removing.", QueueUrl);
             }
 
+            ConstructClientIfNeeded();
+
             RemoveMessages();
         }
 
         private void RemoveMessages()
         {
-            ConstructClientIfNeeded();
-
             foreach (var message in _messages)
             {
                 RemoveMessage(message);
