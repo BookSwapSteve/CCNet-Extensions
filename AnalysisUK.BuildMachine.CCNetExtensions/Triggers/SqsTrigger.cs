@@ -287,7 +287,7 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.Triggers
 
             if (_messages.Count == 0)
             {
-                Log.Error("Trying to remove messages from SQS Queue {0} but no messages listed as need removing.", QueueUrl);
+                Log.Warning("Trying to remove messages from SQS Queue {0} but no messages listed as need removing. Build not triggered by sqsTrigger?", QueueUrl);
             }
 
             ConstructClientIfNeeded();
