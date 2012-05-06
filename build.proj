@@ -2,11 +2,42 @@
 <Project DefaultTargets="Debug" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project=".\Support\AWS MSBuild Tools\Snowcode.S3BuildPublisher.Tasks.Targets" />
 
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)'=='' ">Debug</Configuration>
+    <CCNetLabel Condition=" '$(CCNetLabel)' == '' ">0.0.0.1</CCNetLabel>
+    <CssTidy>.\Support\CssTidy\CssTidy.exe</CssTidy>
+    <ReportsFolder>.\Build\Reports\</ReportsFolder>
+    <ReleasesFolder>.\Deploy\</ReleasesFolder>
+    <NUnitPath>packages\NUnit.Runners.2.6.0.12051\tools</NUnitPath>
+  </PropertyGroup>
 
+  <Target Name="Clean">
+    <Message Text="Clean BuildMachine $(Configuration)" />
+    <MSBuild Projects="BuildMachine.sln" Properties="Configuration=$(Configuration)" Targets="Clean"/>
+    <MSBuild Projects="BuildMachine.SystemTests.sln" Properties="Configuration=$(Configuration)"  Targets="Clean"/>
+  </Target>
 
+  <Target Name="Build">
+    <Message Text="Building CCNet Extensions $(Configuration)" />
 
+    <MSBuild Projects="AnalysisUK.BuildMachine.CCNetExtensions.sln" Properties="Configuration=$(Configuration)" /> 
+  </Target>
 
+  <!-- Publish the output to the releases folder -->
+  <Target Name="Publish">
+    <Message Text="Publishing binaries to $(ReleasesFolder)$(Configuration)" Importance="high" />
+    
+      <RemoveDir Directories="$(ReleasesFolder)$(Configuration)" />
+      <MakeDir Directories="$(ReleasesFolder)$(Configuration)" />
 
+      <CreateItem Include=".\**\bin\$(Configuration)\*.*" >
+		           <Output TaskParameter="Include" ItemName="CCNetExtensionFiles"/>
+      </CreateItem>
+
+      <Copy SourceFiles="@(CCNetExtensionFiles)" DestinationFolder="$(ReleasesFolder)$(Configuration)" />
+    
+      <Message Text="Packaged to $(ReleasesFolder)$(Configuration)" Importance="high" />
+  </Target>
 
   <!-- *********************************************************************************** -->
   <!-- AWS Helpers                                                                         -->
@@ -43,7 +74,7 @@
     
     <DeleteSQSQueueTask
       QueueUrl="$(QueueUrl)"
-      EncryptionContainerName ="MySecretContainer" />
+      EncryptionContainerName ="BuildMachineNet" />
   </Target>
 
   <!-- Send a message to a SQS Queue -->
@@ -63,6 +94,62 @@
     </SendSQSMessageTask>
 
     <Message Text="Sent message Id : $(MessageId)" />
+  </Target>
+
+  <!-- Create a SNS Topic that can be subscribed to -->
+  <!-- This will mimic a notification of change on the BuildMachine project -->
+  <!-- SQS services can then watch this topic and generate a queue entry   -->
+  <Target Name="CreateSNSTopic">
+    <CreateSNSTopicTask
+      TopicName="BuildMachineChangedTest"
+      EncryptionContainerName ="BuildMachineNet">
+      <Output TaskParameter="TopicArn" PropertyName="TopicArn" />
+    </CreateSNSTopicTask>
+
+    <Message Text="Created TopicArn: $(TopicArn)" />
+  </Target>
+
+  <!-- Subscribe to a SNS Topic -->
+  <!-- This doesn't work -->
+  <Target Name="SubscribeToSNS">
+    <!-- Get the SNS Topic, normally the topicArn would be known in advance. -->
+    <CreateSNSTopicTask
+      TopicName="ExampleTopic"
+      EncryptionContainerName ="BuildMachineNet">
+      <Output TaskParameter="TopicArn" PropertyName="TopicArn" />
+    </CreateSNSTopicTask>
+
+    <!-- Subscribe to the SNS topic using email, you will need to confirm the -->
+    <!-- Subscription before you can recieve notifications by clicking the -->
+    <!-- link in the email sent to you from SNS. -->
+    <SubscribeToSNSTopicTask
+      TopicArn="$(TopicArn)"
+      Protocol="sqs"
+      Endpoint="Your.Email@Example.com"
+      EncryptionContainerName ="BuildMachineNet">
+      <Output TaskParameter="SubscriptionArn" PropertyName="SubscriptionArn" />
+    </SubscribeToSNSTopicTask>
+
+    <Message Text="Subscribed to Topic, SubscriptionArn: $(SubscriptionArn)" />
+  </Target>
+
+  <!-- Publish an SNS Notification -->
+  <Target Name="PublishSNSNotification">
+    <CreateSNSTopicTask
+      TopicName="ExampleTopic"
+      EncryptionContainerName ="BuildMachineNet">
+      <Output TaskParameter="TopicArn" PropertyName="TopicArn" />
+    </CreateSNSTopicTask>
+
+    <PublishSNSNotificationTask
+      TopicArn="$(TopicArn)"
+      Subject="Test Message"
+      Message="This is a test message"
+      EncryptionContainerName ="BuildMachineNet">
+      <Output TaskParameter="MessageId" PropertyName="MessageId" />
+    </PublishSNSNotificationTask>
+
+    <Message Text="Published Message : $(MessageId)" />
   </Target>
 
 </Project>
