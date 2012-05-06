@@ -5,6 +5,12 @@ obj
 *.suo
 *.log
 *.bak
+
+# NCrunch
+*.crunch*
+*.ncrunch*
+.*crunch*.local.xml
+
 Thumbs.db
 Debug/
 Release/
