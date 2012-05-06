@@ -207,7 +207,7 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.Triggers
         #endregion
 
         #region Private methods
-        
+
         /// <summary>
         /// Set the interval of the inner trigger
         /// </summary>
@@ -255,15 +255,23 @@ namespace AnalysisUK.BuildMachine.CCNetExtensions.Triggers
         /// <returns></returns>
         private List<Amazon.SQS.Model.Message> GetMessagesFromQueue()
         {
-            var request = new ReceiveMessageRequest { MaxNumberOfMessages = 10, QueueUrl = QueueUrl };
-
-            ReceiveMessageResponse response = _client.ReceiveMessage(request);
-
-            if (response.IsSetReceiveMessageResult())
+            try
             {
-                return response.ReceiveMessageResult.Message;
+                var request = new ReceiveMessageRequest { MaxNumberOfMessages = 10, QueueUrl = QueueUrl };
+
+                ReceiveMessageResponse response = _client.ReceiveMessage(request);
+
+                if (response.IsSetReceiveMessageResult())
+                {
+                    return response.ReceiveMessageResult.Message;
+                }
+                return null;
             }
-            return null;
+            catch (Exception ex)
+            {
+                Log.Error("Failed getting messages from queue {0}. Exception: ", QueueUrl, ex);
+                return null;
+            }
         }
 
         /// <summary>
